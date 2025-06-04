@@ -1,0 +1,270 @@
+<div id="notification-popup" class="hidden"></div>
+
+<div class="container">
+    <h2>Application Form</h2>
+    <div class="select-container">
+        <button class="btn-success" id="add-button">➕</button>
+        <button class="btn-warning" id="edit-button">✏️</button>
+        <button class="btn-info" id="import-button">📥</button>
+        <button class="btn-primary" id="export-button">📤</button>
+        <select id="custom-select">
+            <option disabled selected>Select an option</option>
+        </select>
+        <button class="btn-refresh" id="refresh-button">🔄</button>
+    </div>
+</div>
+
+<!-- Form Popup -->
+<div id="popup-overlay"></div>
+<div id="form-popup">
+    <h3 style="text-align: center;">Application Form</h3>
+    <form id="applicationForm">
+        <input type="text" name="fullName" placeholder="Enter Full Name" required>
+        <input type="text" name="geezFullName" placeholder="Geez Full Name" required>
+        <input type="tel" name="phone" placeholder="Enter Phone Number" required>
+        <input type="date" name="birthDate">
+        <input type="text" name="birthplace" placeholder="Birth Place" required>
+        <select name="maritalStatus">
+            <option value="">Select Marital Status</option>
+            <option value="0">Single</option>
+            <option value="1">Married</option>
+            <option value="2">Divorced</option>
+            <option value="3">Widowed</option>
+        </select>
+        <select name="gender">
+            <option value="">Select Gender</option>
+            <option value="1">Male</option>
+            <option value="0">Female</option>
+        </select>
+        <button type="submit" class="btn-primary">Save Data</button>
+    </form>
+</div>
+
+<style>
+/* Your Full CSS here */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+}
+.container {
+    max-width: 600px;
+    margin: auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+#form-popup, #edit-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 400px;
+    background-color: #85e2da;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1001;
+}
+#popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s;
+}
+.btn-primary { background-color: #007BFF; color: white; }
+.btn-success { background-color: #5cb85c; color: white; }
+.btn-warning { background-color: #f0ad4e; color: white; }
+.btn-danger { background-color: #d9534f; color: white; }
+.btn-info { background-color: #0275d8; color: white; }
+.btn-refresh { background-color: #7db2eb; color: white; }
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.select-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 20px;
+}
+#notification-popup {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 16px;
+    display: none;
+    z-index: 1002;
+}
+</style>
+
+<script>
+// Your Full JavaScript Here
+document.addEventListener("DOMContentLoaded", () => {
+    const formPopup = document.getElementById("form-popup");
+    const overlay = document.getElementById("popup-overlay");
+    const form = document.getElementById("applicationForm");
+    const addButton = document.getElementById("add-button");
+    const editButton = document.getElementById("edit-button");
+    const deleteButton = document.createElement("button");
+    const importButton = document.getElementById("import-button");
+    const exportButton = document.getElementById("export-button");
+    const refreshButton = document.getElementById("refresh-button");
+    const selectInput = document.getElementById("custom-select");
+    const notificationPopup = document.getElementById("notification-popup");
+
+    let editingIndex = null;
+
+    deleteButton.textContent = "🗑️";
+    deleteButton.className = "btn-danger";
+    deleteButton.id = "delete-button";
+    selectInput.parentElement.insertBefore(deleteButton, refreshButton);
+
+    function showNotification(message, color = "#28a745") {
+        notificationPopup.textContent = message;
+        notificationPopup.style.backgroundColor = color;
+        notificationPopup.style.display = "block";
+        setTimeout(() => {
+            notificationPopup.style.display = "none";
+        }, 3000);
+    }
+
+    addButton.addEventListener("click", () => {
+        formPopup.style.display = "block";
+        overlay.style.display = "block";
+        form.reset();
+        editingIndex = null;
+    });
+
+    editButton.addEventListener("click", () => {
+        const selectedIndex = selectInput.value;
+        if (selectedIndex === "" || selectedIndex === "Select an option") {
+            showNotification("Please select an option to edit.", "#dc3545");
+            return;
+        }
+        const formData = JSON.parse(localStorage.getItem("formData")) || [];
+        const selectedData = formData[selectedIndex];
+
+        if (selectedData) {
+            formPopup.style.display = "block";
+            overlay.style.display = "block";
+            form.elements["fullName"].value = selectedData.fullName;
+            form.elements["geezFullName"].value = selectedData.geezFullName;
+            form.elements["phone"].value = selectedData.phone;
+            form.elements["birthDate"].value = selectedData.birthDate;
+            form.elements["birthplace"].value = selectedData.birthplace;
+            form.elements["maritalStatus"].value = selectedData.maritalStatus;
+            form.elements["gender"].value = selectedData.gender;
+            editingIndex = selectedIndex;
+        }
+    });
+
+    overlay.addEventListener("click", () => {
+        formPopup.style.display = "none";
+        overlay.style.display = "none";
+    });
+
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const formData = JSON.parse(localStorage.getItem("formData")) || [];
+        const newData = Object.fromEntries(new FormData(form).entries());
+
+        if (editingIndex !== null) {
+            formData[editingIndex] = newData;
+            showNotification("Data updated successfully.");
+        } else {
+            formData.push(newData);
+            showNotification("Data saved successfully.");
+        }
+
+        localStorage.setItem("formData", JSON.stringify(formData));
+        populateSelect();
+        formPopup.style.display = "none";
+        overlay.style.display = "none";
+    });
+
+    deleteButton.addEventListener("click", () => {
+        const selectedIndex = selectInput.value;
+        if (selectedIndex === "" || selectedIndex === "Select an option") {
+            showNotification("Please select an option to delete.", "#dc3545");
+            return;
+        }
+        const formData = JSON.parse(localStorage.getItem("formData")) || [];
+        formData.splice(selectedIndex, 1);
+        localStorage.setItem("formData", JSON.stringify(formData));
+        populateSelect();
+        showNotification("Data deleted successfully.", "#d9534f");
+    });
+
+    exportButton.addEventListener("click", () => {
+        const formData = localStorage.getItem("formData");
+        if (!formData) {
+            showNotification("No data to export.", "#dc3545");
+            return;
+        }
+        const blob = new Blob([formData], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "formData.json";
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    importButton.addEventListener("click", () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json";
+        input.onchange = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                localStorage.setItem("formData", e.target.result);
+                populateSelect();
+                showNotification("Data imported successfully.");
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    });
+
+    refreshButton.addEventListener("click", populateSelect);
+
+    function populateSelect() {
+        const formData = JSON.parse(localStorage.getItem("formData")) || [];
+        selectInput.innerHTML = '<option disabled selected>Select an option</option>';
+        formData.forEach((data, index) => {
+            const option = document.createElement("option");
+            option.value = index;
+            option.textContent = data.fullName;
+            selectInput.appendChild(option);
+        });
+    }
+
+    populateSelect();
+});
+</script>
